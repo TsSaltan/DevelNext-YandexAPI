@@ -1,0 +1,61 @@
+<!-- 
+    Yandex Api Version 2.1
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute; 
+            width: 100%; 
+            height: 100%;
+            z-index: 1;
+        }        
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script type="text/javascript">
+        ymaps.ready(function(){     
+            myMap = new ymaps.Map("map", {
+                center: [55.76, 37.64],
+                zoom: 7,
+                controls: []
+            });
+
+            myMap.events.add('click', function (e) {
+			    // Получение координат щелчка
+			    var coords = e.get('coords');
+			    sendBridge(coords.join(';'));
+			});
+
+            // Да простит меня Яндекс, но если в браузере кликнуть на копирайт, всё летит к чертям...
+            document.querySelector('.ymaps-2-1-56-copyrights-pane').style.display = 'none';
+        });
+
+        var myMap;
+
+        function sendBridge(data){
+        	document.title = 'data:' + data;
+        }        
+
+        function getBridge(){
+        	var data = document.title;
+        	clearBridge();
+        	return data;
+        }
+
+        function clearBridge(){
+        	document.title = 'data:';
+        }
+
+        
+    </script>
+</body>
+</html>
