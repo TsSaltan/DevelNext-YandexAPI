@@ -38,9 +38,9 @@ class YandexLocator
     }
 
     private static function query(array $data){
-        var_dump(['query' => $data]);
+        // var_dump(['query' => $data]);
         $data['common']['version'] = "1.0";
-        $data['common']['api_key'] = YandexAPI::$apiKey;
+        $data['common']['api_key'] = YandexAPI::$mapKey;
         $ch = new jURL(self::$apiUrl);
         $ch->setRequestMethod('POST');
         $ch->setPostData(['json' => json_encode($data)]);

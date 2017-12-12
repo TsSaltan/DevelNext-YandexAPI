@@ -3,10 +3,13 @@ namespace bundle\yandex;
 
 class YandexAPI 
 {
-    // API key -> https://tech.yandex.ru/locator/
-    public static $apiKey;
+    /**
+     * Ключ для Яндекс.Карты
+     * @url https://tech.yandex.ru/locator/
+     */
+    public static $mapKey;
     
-    public static function setKey($key){
-        self::$apiKey = $key;
+    public static function setMapKey($key){
+        self::$mapKey = $key;
     }
 }
