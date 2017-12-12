@@ -1,6 +1,7 @@
 <?php
 namespace bundle\yandex\maps;
 
+use php\gui\paint\UXColor;
 use bundle\yandex\maps\GeoObject;
 
 /**

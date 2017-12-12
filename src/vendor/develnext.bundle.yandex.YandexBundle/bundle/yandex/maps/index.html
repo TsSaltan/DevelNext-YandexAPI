@@ -22,6 +22,32 @@
 <body>
     <div id="map"></div>
     <script type="text/javascript">
+        var myMap;
+        var Bridge = {
+        	send: function(data){
+        		document.title = JSON.stringify(data);
+        	},
+
+        	clear: function(){
+        		document.title = '{}';
+        	},
+
+        	get: function(){
+				return document.title;
+        	}
+        };
+
+        function registerMapEvent(eventName){
+        	myMap.events.add(eventName, function (e) {
+        		console.log(e);
+			    Bridge.send({
+			    	event: e.get('type'), 
+			    	target: 'map', 
+			    	coords: e.get('coords')
+			    });
+			});
+        }
+
         ymaps.ready(function(){     
             myMap = new ymaps.Map("map", {
                 center: [55.76, 37.64],
@@ -29,31 +55,10 @@
                 controls: []
             });
 
-            myMap.events.add('click', function (e) {
-			    // Получение координат щелчка
-			    var coords = e.get('coords');
-			    sendBridge(coords.join(';'));
-			});
-
+        	Bridge.send({event: 'load', target: 'map'});
             // Да простит меня Яндекс, но если в браузере кликнуть на копирайт, всё летит к чертям...
             document.querySelector('.ymaps-2-1-56-copyrights-pane').style.display = 'none';
         });
-
-        var myMap;
-
-        function sendBridge(data){
-        	document.title = 'data:' + data;
-        }        
-
-        function getBridge(){
-        	var data = document.title;
-        	clearBridge();
-        	return data;
-        }
-
-        function clearBridge(){
-        	document.title = 'data:';
-        }
 
         
     </script>

@@ -6,4 +6,4 @@ icon=develnext/bundle/yandex/yandex.png
 
 class=develnext\\bundle\\yandex\\YandexBundle
 author=Ts.Saltan
-version=0.1
+version=0.2

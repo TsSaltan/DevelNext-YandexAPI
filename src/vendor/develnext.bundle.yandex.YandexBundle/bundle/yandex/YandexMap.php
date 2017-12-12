@@ -1,6 +1,7 @@
 <?php
 namespace bundle\yandex;
 
+use php\time\Timer;
 use bundle\yandex\maps\GeoObject;
 use php\framework\Logger;
 use php\lang\Thread;
@@ -23,14 +24,14 @@ class YandexMap
     private $parentPanel;    
     
     /**
-     * @var callable 
+     * @var bool 
      */
-    private $onLoad;   
+    private $isLoad = false;   
      
     /**
-     * @var callable 
+     * @var array 
      */
-    private $onClick;
+    private $events = [];
     
     private $indexPage = 'res://bundle/yandex/maps/index.html';
     
@@ -46,13 +47,10 @@ class YandexMap
            
         $this->webView->engine->loadContent(fs::get($this->indexPage), 'text/html');  
         $this->parentPanel->add($this->webView);
-        
         $this->webView->engine->watchState(function($browser, $a, $b){
             switch($b){
                 case 'SUCCEEDED':
-                    if(is_callable($this->onLoad)){
-                        waitAsync(1500, $this->onLoad);
-                    }
+                    $this->eventHandler();
                     break;
                 
                 case 'SCHEDULED':    
@@ -62,7 +60,7 @@ class YandexMap
             }
         });
         
-        $this->webView->on('click', function(){
+       /* $this->webView->on('click', function(){
             if(!is_callable($this->onClick)) return;
             // format data:lat;lon
             $data = $this->webView->engine->callFunction('getBridge', []);
@@ -71,28 +69,58 @@ class YandexMap
                 $pos = explode(';',$ex[1]);
                 call_user_func_array($this->onClick, [floatval($pos[0]), floatval($pos[1])]);
             }
-        });
+        });*/
     }
     
-    public function onLoad(callable $callback){
+    /*public function onLoad(callable $callback){
         $this->onLoad = $callback;
     }    
     
     public function onClick(callable $callback){
         $this->onClick = $callback;
+    }*/
+    
+    /**
+     * Добавить обработчик событий
+     * @url https://tech.yandex.ru/maps/doc/jsapi/2.0/dg/concepts/events-docpage/ 
+     */
+    public function on(string $event, callable $callback){
+        $this->events[$event] = $callback;
+        $this->executeScript('registerMapEvent("' . $event . '")');
+    }    
+    
+    public function off(string $event){
+        unset($this->events[$event]);
     }
     
-    public function executeScript(string $script, $errorLevel = 0){
-        try{
-            if($this->webView->engine->state != 'SUCCEEDED'){
-                throw new Exception('Browser does not ready!');       
-            }    
+    private function eventHandler(){
+        Timer::setInterval(function(){
+            uiLaterAndWait(function(){
+                $data = json_decode($this->webView->engine->title, true);
+                if(!isset($data['event'])) return;
+                if($data['event'] == 'load'){
+                    $this->isLoad = true;
+                }
+                
+                $this->executeScript('Bridge.clear()');
+                if(isset($this->events[$data['event']])){
+                    call_user_func_array($this->events[$data['event']], [$data]);
+                }
+            });
+        }, 250);
+    }
+        
+    public function executeScript(string $script){
+        if($this->webView->engine->state != 'SUCCEEDED' || !$this->isLoad){
+            return waitAsync(1000, function() use ($script, $errorLevel){
+                call_user_func_array([$this, 'executeScript'], [$script]);
+            });     
+        }     
+            
+        try{   
             $this->webView->engine->executeScript($script);
         } catch (Exception | JSException $e) {
-            if($errorLevel >= 3) return Logger::error('YandexMap: invalid script: "'.$script.'". Error: ' . $e->getMessage());
-            waitAsync(1500, function() use ($script, $errorLevel){
-                call_user_func_array([$this, 'executeScript'], [$script, $errorLevel+1]);
-            });
+            return Logger::error('YandexMap: invalid script: "'.$script.'". Error: ' . $e->getMessage());
         }
     }
     
@@ -100,13 +128,18 @@ class YandexMap
         $json = json_encode([$lat, $lon]);
         return $this->executeScript("myMap.setCenter($json" . ($zoom > 0 ? ", $zoom" : ''). ")");
     }         
+    
     /**
-     * @param string $control 'zoomControl', 'searchControl', 'typeSelector',  'fullscreenControl', 'routeButtonControl' 
+     * Добавить элемент управления
+     * @param string $control = 'zoomControl', 'searchControl', 'typeSelector',  'fullscreenControl', 'routeButtonControl' 
      */
     public function addControl(string $control){
         return $this->executeScript("myMap.controls.add('$control')");
     }      
     
+    /**
+     * Добавить несколько элементов управления 
+     */
     public function addControls(array $controls){
         array_map([$this, 'addControl'], $controls);
     }     
@@ -119,13 +152,19 @@ class YandexMap
         return $this->executeScript("myMap.panTo($json, {delay: $delay})");
     }      
     
+    /**
+     * Сделать видимыми границы 
+     */
     public function setBounds(float $lat1, float $lon1, float $lat2, float $lon2, array $options = []){
         $json = json_encode([[$lat1, $lon1], [$lat2, $lon2]]);
         $jOpts = sizeof($options) > 0 ? json_encode($options) : '{}';
         return $this->executeScript("myMap.setBounds($json, $jOpts)");
     }    
       
-    public function setZoom(float $zoom){
+    /**
+     * Установить степень увеличения 
+     */  
+    public function setZoom(int $zoom){
         return $this->executeScript("myMap.setZoom($zoom)");
     }    
     
@@ -137,12 +176,17 @@ class YandexMap
         return $this->executeScript("myMap.setType('yandex#$type')");
     }
     
+    /**
+     * Добавить объект на карту 
+     */
     public function addObject(GeoObject $object){
-        //var_dump($object->getCode());
         $this->executeScript($object->getCode());
         return $this->executeScript("myMap.geoObjects.add(".$object->getVar().")");
     }     
     
+    /**
+     * Удалить объект 
+     */
     public function removeObject(GeoObject $object){
         return $this->executeScript("myMap.geoObjects.remove(".$object->getVar().")");
     } 
