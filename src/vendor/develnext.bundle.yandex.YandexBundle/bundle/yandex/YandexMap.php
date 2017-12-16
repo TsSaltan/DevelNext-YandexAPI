@@ -50,6 +50,7 @@ class YandexMap
         $this->webView->engine->watchState(function($browser, $a, $b){
             switch($b){
                 case 'SUCCEEDED':
+                    // После загрузки карты запускаем обработчик событий
                     $this->eventHandler();
                     break;
                 
@@ -59,26 +60,7 @@ class YandexMap
                     $this->webView->engine->refresh();
             }
         });
-        
-       /* $this->webView->on('click', function(){
-            if(!is_callable($this->onClick)) return;
-            // format data:lat;lon
-            $data = $this->webView->engine->callFunction('getBridge', []);
-            $ex = explode(':', $data);
-            if(isset($ex[1]) and strlen($ex[1]) > 3){
-                $pos = explode(';',$ex[1]);
-                call_user_func_array($this->onClick, [floatval($pos[0]), floatval($pos[1])]);
-            }
-        });*/
     }
-    
-    /*public function onLoad(callable $callback){
-        $this->onLoad = $callback;
-    }    
-    
-    public function onClick(callable $callback){
-        $this->onClick = $callback;
-    }*/
     
     /**
      * Добавить обработчик событий
@@ -89,6 +71,9 @@ class YandexMap
         $this->executeScript('registerMapEvent("' . $event . '")');
     }    
     
+    /**
+     * Удалить обработчик событий
+     */
     public function off(string $event){
         unset($this->events[$event]);
     }
@@ -109,7 +94,10 @@ class YandexMap
             });
         }, 250);
     }
-        
+    
+    /**
+     * Выполнить JavaScript
+     */
     public function executeScript(string $script){
         if($this->webView->engine->state != 'SUCCEEDED' || !$this->isLoad){
             return waitAsync(1000, function() use ($script, $errorLevel){
@@ -124,6 +112,9 @@ class YandexMap
         }
     }
     
+    /**
+     * Установить центр карты
+     */
     public function setCenter(float $lat, float $lon, int $zoom = 0){
         $json = json_encode([$lat, $lon]);
         return $this->executeScript("myMap.setCenter($json" . ($zoom > 0 ? ", $zoom" : ''). ")");
@@ -181,14 +172,15 @@ class YandexMap
      */
     public function addObject(GeoObject $object){
         $this->executeScript($object->getCode());
-        return $this->executeScript("myMap.geoObjects.add(".$object->getVar().")");
+        $this->executeScript("myMap.geoObjects.add(".$object->getVar().")");
+        $object->setParentMap($this);
     }     
     
     /**
      * Удалить объект 
      */
     public function removeObject(GeoObject $object){
-        return $this->executeScript("myMap.geoObjects.remove(".$object->getVar().")");
+        $this->executeScript("myMap.geoObjects.remove(".$object->getVar().")");
     } 
     
 }

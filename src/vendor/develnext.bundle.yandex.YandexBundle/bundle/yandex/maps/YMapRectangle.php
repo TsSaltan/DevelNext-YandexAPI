@@ -9,7 +9,7 @@ use bundle\yandex\maps\GeoObject;
  */
 class YMapRectangle extends GeoObject
 {
-    public function __construct(array $coordinates, array $properties = [], array $options = []){
-        parent::__construct('Rectangle', $coordinates, $properties, $options);
+    public function __construct(float $lat1, float $lon1, float $lat2, float $lon2, array $properties = [], array $options = []){
+        parent::__construct('Rectangle', [[$lat1, $lon1], [$lat2, $lon2]], $properties, $options);
     }
 }

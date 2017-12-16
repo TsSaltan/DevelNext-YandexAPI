@@ -4,6 +4,9 @@ namespace bundle\yandex;
 use bundle\jurl\jURL;
 use bundle\yandex\YandexAPI;
 
+/**
+ * @todo getCoordsByAddress 
+ */
 class YandexGeocode 
 {
     private static $apiUrl = 'https://geocode-maps.yandex.ru/1.x/';
@@ -19,6 +22,7 @@ class YandexGeocode
     
     /**
      * Получить адрес по координатам 
+     * @url https://tech.yandex.ru/maps/doc/geocoder/desc/concepts/response_structure-docpage/#json_response
      * @return array
      */
     public static function getAddressByCoords(float $lat, float $lon) : array {
@@ -34,11 +38,12 @@ class YandexGeocode
         $params['lang'] = self::$lang;
         $params['format'] = 'json';
         $params['key'] = YandexAPI::$mapKey;
-        var_dump($url = self::$apiUrl . '?' . http_build_query($params));
+        // var_dump($url = self::$apiUrl . '?' . http_build_query($params));
         $ch = new jURL($url);
         $data = $ch->exec();
         $json = json_decode($data, true);
         
-        return $json['response']['GeoObjectCollection']['featureMember'] ?? $json;
+        return $json;
+//        return $json['response']['GeoObjectCollection']['featureMember'] ?? $json;
     }
 }
