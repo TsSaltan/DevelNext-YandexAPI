@@ -38,7 +38,7 @@ class YandexGeocode
         $params['lang'] = self::$lang;
         $params['format'] = 'json';
         $params['key'] = YandexAPI::$mapKey;
-        // var_dump($url = self::$apiUrl . '?' . http_build_query($params));
+        $url = self::$apiUrl . '?' . http_build_query($params);
         $ch = new jURL($url);
         $data = $ch->exec();
         $json = json_decode($data, true);
